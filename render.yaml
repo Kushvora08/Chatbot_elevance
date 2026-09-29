@@ -1,0 +1,45 @@
+# Paid resources. Review the estimated cost before creating this Blueprint.
+services:
+  - type: web
+    name: aster-chatbot
+    runtime: python
+    plan: 0.5c-512mb
+    numInstances: 1
+    buildCommand: pip install -r requirements-hosted.txt && pip install --no-deps .
+    startCommand: python -m kb_pipeline.hosted
+    healthCheckPath: /healthz
+    autoDeployTrigger: checksPass
+    disk:
+      name: aster-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.14
+      - key: APP_SECRET_KEY
+        generateValue: true
+      - key: ADMIN_USERNAME
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: APP_DATA_DIR
+        value: /var/data
+      - key: RATELIMIT_STORAGE_URI
+        fromService:
+          type: keyvalue
+          name: aster-rate-limits
+          property: connectionString
+      - key: KB_UPDATE_TIME
+        value: '02:00'
+      - key: KB_MAINTENANCE_START
+        value: '02:00'
+      - key: KB_MAINTENANCE_END
+        value: '03:00'
+      - key: KB_SEED_DEMO_DATA
+        value: '1'
+  - type: keyvalue
+    name: aster-rate-limits
+    plan: 256mb
+    ipAllowList: []
+    maxmemoryPolicy: noeviction
+    persistenceMode: journal-snapshot
